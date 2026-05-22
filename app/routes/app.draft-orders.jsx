@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { useActionData, useLoaderData, useFetcher, Form } from "react-router";
+import { useState, useEffect } from "react";
+import { useActionData, useFetcher, Form } from "react-router";
 import { authenticate } from "../shopify.server";
 
 // ─── LOADER ──────────────────────────────────────────────────────────────────
@@ -10,31 +10,6 @@ export async function loader({ request }) {
   const customerQuery = url.searchParams.get("customerQuery") || "";
   const productQuery = url.searchParams.get("productQuery") || "";
   const intent = url.searchParams.get("intent");
-
-  if (intent === "searchCustomers") {
-    const res = await admin.graphql(
-      `query searchCustomers($query: String!) {
-        customers(first: 10, query: $query) {
-          edges {
-            node {
-              id
-              displayName
-              email
-              phone
-              defaultAddress {
-                address1
-                city
-                country
-              }
-            }
-          }
-        }
-      }`,
-      { variables: { query: customerQuery || "a" } }
-    );
-    const data = await res.json();
-    return { customers: data.data?.customers?.edges?.map((e) => e.node) ?? [], intent: "searchCustomers" };
-  }
 
   if (intent === "searchProducts") {
     const res = await admin.graphql(
@@ -172,7 +147,7 @@ export async function action({ request }) {
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function uid() {
-  return Math.random().toString(36).slice(2, 9);
+  return Date.now().toString() + Math.random().toString(36).slice(2, 5);
 }
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
@@ -247,105 +222,6 @@ function SearchInput({ value, onChange, placeholder, loading }) {
         }}>⏳</span>
       )}
     </div>
-  );
-}
-
-function CustomerSection({ selectedCustomer, onSelect }) {
-  const fetcher = useFetcher();
-  const [query, setQuery] = useState("");
-  const [showResults, setShowResults] = useState(false);
-
-  const customers = fetcher.data?.intent === "searchCustomers" ? fetcher.data.customers : [];
-  const loading = fetcher.state === "loading";
-
-  useEffect(() => {
-    if (query.length < 1) { setShowResults(false); return; }
-    setShowResults(true);
-    const t = setTimeout(() => {
-      fetcher.load(`?intent=searchCustomers&customerQuery=${encodeURIComponent(query)}`);
-    }, 350);
-    return () => clearTimeout(t);
-  }, [query]);
-
-  return (
-    <SectionCard title="Customer" subtitle="Search and select an existing customer" accent="#5c6ac4">
-      {selectedCustomer ? (
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "12px 16px",
-          background: "var(--selected-bg)",
-          border: "1px solid var(--accent)",
-          borderRadius: "8px",
-        }}>
-          <div>
-            <div style={{ fontWeight: "600", fontSize: "14px", color: "var(--text-primary)" }}>
-              {selectedCustomer.displayName}
-            </div>
-            <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
-              {selectedCustomer.email}
-              {selectedCustomer.defaultAddress?.city && ` · ${selectedCustomer.defaultAddress.city}, ${selectedCustomer.defaultAddress.country}`}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => onSelect(null)}
-            style={{
-              background: "none", border: "1px solid var(--border)",
-              borderRadius: "6px", padding: "4px 10px",
-              fontSize: "12px", cursor: "pointer", color: "var(--text-secondary)",
-            }}
-          >
-            Remove
-          </button>
-        </div>
-      ) : (
-        <div style={{ position: "relative" }}>
-          <SearchInput
-            value={query}
-            onChange={setQuery}
-            placeholder="Search by name, email, or phone..."
-            loading={loading}
-          />
-          {showResults && customers.length > 0 && (
-            <div style={{
-              position: "absolute", top: "100%", left: 0, right: 0, zIndex: 100,
-              background: "var(--card-bg)", border: "1px solid var(--border)",
-              borderRadius: "8px", boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-              marginTop: "4px", maxHeight: "280px", overflowY: "auto",
-            }}>
-              {customers.map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => { onSelect(c); setQuery(""); setShowResults(false); }}
-                  style={{
-                    padding: "10px 14px", cursor: "pointer",
-                    borderBottom: "1px solid var(--border)",
-                    transition: "background 0.1s",
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--hover-bg)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                >
-                  <div style={{ fontWeight: "600", fontSize: "13px", color: "var(--text-primary)" }}>{c.displayName}</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                    {c.email}{c.defaultAddress?.city ? ` · ${c.defaultAddress.city}` : ""}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {showResults && !loading && customers.length === 0 && query.length > 1 && (
-            <div style={{
-              position: "absolute", top: "100%", left: 0, right: 0, zIndex: 100,
-              background: "var(--card-bg)", border: "1px solid var(--border)",
-              borderRadius: "8px", marginTop: "4px", padding: "14px",
-              fontSize: "13px", color: "var(--text-secondary)", textAlign: "center",
-            }}>
-              No customers found for "{query}"
-            </div>
-          )}
-        </div>
-      )}
-    </SectionCard>
   );
 }
 
@@ -874,7 +750,13 @@ const qtyBtnStyle = {
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function DraftOrdersPage() {
   const actionData = useActionData();
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
   // const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [lineItems, setLineItems] = useState([]);
   const [discount, setDiscount] = useState({ value: "", type: "PERCENTAGE" });
@@ -909,7 +791,7 @@ export default function DraftOrdersPage() {
         * { box-sizing: border-box; }
       `}</style>
 
-      <s-page heading="Create Draft Order">
+      <div heading="Create Draft Order">
         <div style={{ maxWidth: "780px", margin: "0 auto", padding: "24px 16px" }}>
 
           {/* Success Banner */}
@@ -1018,7 +900,7 @@ export default function DraftOrdersPage() {
             </div>
           </Form>
         </div>
-      </s-page>
+      </div>
     </>
   );
 }
