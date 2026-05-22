@@ -750,18 +750,21 @@ const qtyBtnStyle = {
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function DraftOrdersPage() {
   const actionData = useActionData();
+
   const [mounted, setMounted] = useState(false);
+  const [lineItems, setLineItems] = useState([]);
+  const [discount, setDiscount] = useState({
+    value: "",
+    type: "PERCENTAGE",
+  });
+  const [noteAttributes, setNoteAttributes] = useState([]);
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
-  // const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [lineItems, setLineItems] = useState([]);
-  const [discount, setDiscount] = useState({ value: "", type: "PERCENTAGE" });
-  const [noteAttributes, setNoteAttributes] = useState([]);
-  const [note, setNote] = useState("");
 
   const draftOrder = actionData?.data?.draftOrderCreate?.draftOrder;
   const userErrors = actionData?.data?.draftOrderCreate?.userErrors;
