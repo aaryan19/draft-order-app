@@ -2,7 +2,7 @@
 
 client_id = "6cb162cedd6583aa701c2ce81c22e119"
 name = "draft-order-app"
-application_url = "https://draft-order-app-y00u.onrender.com"
+application_url = "https://draft-order-app-1.onrender.com"
 embedded = true
 
 [webhooks]
@@ -15,4 +15,7 @@ optional_scopes = [ ]
 use_legacy_install_flow = false
 
 [auth]
-redirect_urls = [ "https://draft-order-app-y00u.onrender.com/auth/callback" ]
+redirect_urls = [ "https://draft-order-app-1.onrender.com/auth/callback" ]
+
+[build]
+automatically_update_urls_on_dev = true
