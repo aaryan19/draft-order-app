@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useActionData, useFetcher, Form } from "react-router";
 import { authenticate } from "../shopify.server";
-
+import { useId } from "react";
 // ─── LOADER ──────────────────────────────────────────────────────────────────
 export async function loader({ request }) {
   const { admin } = await authenticate.admin(request);
@@ -143,11 +143,6 @@ export async function action({ request }) {
   console.log("DRAFT ORDER RESULT:", JSON.stringify(result, null, 2));
 
   return result;
-}
-
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-function uid() {
-  return Date.now().toString() + Math.random().toString(36).slice(2, 5);
 }
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
@@ -751,7 +746,6 @@ const qtyBtnStyle = {
 export default function DraftOrdersPage() {
   const actionData = useActionData();
 
-  const [mounted, setMounted] = useState(false);
   const [lineItems, setLineItems] = useState([]);
   const [discount, setDiscount] = useState({
     value: "",
@@ -759,12 +753,6 @@ export default function DraftOrdersPage() {
   });
   const [noteAttributes, setNoteAttributes] = useState([]);
   const [note, setNote] = useState("");
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
 
   const draftOrder = actionData?.data?.draftOrderCreate?.draftOrder;
   const userErrors = actionData?.data?.draftOrderCreate?.userErrors;
